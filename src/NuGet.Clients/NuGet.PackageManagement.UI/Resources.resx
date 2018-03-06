@@ -699,11 +699,8 @@ Please see https://aka.ms/troubleshoot_nuget_cache for more help.</value>
   <data name="NuGetUpgrade_PackageDependencyOf" xml:space="preserve">
     <value>(dependency of {0})</value>
   </data>
-  <data name="Text_UpgradeOptions" xml:space="preserve">
-    <value>Upgrade Options:</value>
-  </data>
   <data name="Text_NuGetUpgradeIssues" xml:space="preserve">
-    <value>Issues:</value>
+    <value>Package compatibility issues:</value>
   </data>
   <data name="Text_NuGetUpgradeNoIssuesFound" xml:space="preserve">
     <value>No issues were found.</value>
@@ -745,7 +742,8 @@ Please see https://aka.ms/troubleshoot_nuget_cache for more help.</value>
     <value>Changes for {0}</value>
   </data>
   <data name="WindowTitle_NuGetUpgrader" xml:space="preserve">
-    <value>NuGet Upgrader</value>
+    <value>Upgrade NuGet format to PackageReference - {0}</value>
+    <comment>{0} is the project name</comment>
   </data>
   <data name="WindowTitle_ConvertPackagesConfigIntro" xml:space="preserve">
     <value>Convert</value>
@@ -755,12 +753,6 @@ Please see https://aka.ms/troubleshoot_nuget_cache for more help.</value>
   </data>
   <data name="Error_ProjectNotInCache" xml:space="preserve">
     <value>Project {0} does not exist in the project system cache.</value>
-  </data>
-  <data name="Radio_CollapseDependencies" xml:space="preserve">
-    <value>Collapse dependencies (recommended)</value>
-  </data>
-  <data name="Radio_FlattenDependencies" xml:space="preserve">
-    <value>Flatten dependencies</value>
   </data>
   <data name="Button_Upgrade" xml:space="preserve">
     <value>Upgrade</value>
@@ -778,10 +770,10 @@ Please see https://aka.ms/troubleshoot_nuget_cache for more help.</value>
     <value>NuGet upgrade failed to uninstall packages from packages.config so rolled back to previous state.</value>
   </data>
   <data name="Text_DirectDependencies" xml:space="preserve">
-    <value>Top-level Dependencies</value>
+    <value>Top-level dependencies:</value>
   </data>
   <data name="Text_TransitiveDependencies" xml:space="preserve">
-    <value>Transitive Dependencies</value>
+    <value>Transitive dependencies:</value>
   </data>
   <data name="Upgrader_BackupFailed" xml:space="preserve">
     <value>The project cannot be upgraded as backing up the project file and packages.config ran into an issue.</value>

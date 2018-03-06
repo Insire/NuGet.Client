@@ -1071,24 +1071,6 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Collapse dependencies (recommended).
-        /// </summary>
-        public static string Radio_CollapseDependencies {
-            get {
-                return ResourceManager.GetString("Radio_CollapseDependencies", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Flatten dependencies.
-        /// </summary>
-        public static string Radio_FlattenDependencies {
-            get {
-                return ResourceManager.GetString("Radio_FlattenDependencies", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to PackageReference in project file.
         /// </summary>
         public static string RadioBtn_PackageRef {
@@ -1325,7 +1307,7 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Top-level Dependencies.
+        ///   Looks up a localized string similar to Top-level dependencies:.
         /// </summary>
         public static string Text_DirectDependencies {
             get {
@@ -1487,7 +1469,7 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Issues:.
+        ///   Looks up a localized string similar to Package compatibility issues:.
         /// </summary>
         public static string Text_NuGetUpgradeIssues {
             get {
@@ -1640,7 +1622,7 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Transitive Dependencies.
+        ///   Looks up a localized string similar to Transitive dependencies:.
         /// </summary>
         public static string Text_TransitiveDependencies {
             get {
@@ -1690,15 +1672,6 @@ namespace NuGet.PackageManagement.UI {
         public static string Text_UpgradeNuGetProjectDescription {
             get {
                 return ResourceManager.GetString("Text_UpgradeNuGetProjectDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Upgrade Options:.
-        /// </summary>
-        public static string Text_UpgradeOptions {
-            get {
-                return ResourceManager.GetString("Text_UpgradeOptions", resourceCulture);
             }
         }
         
@@ -1982,7 +1955,7 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to NuGet Upgrader.
+        ///   Looks up a localized string similar to Upgrade NuGet format to PackageReference - {0}.
         /// </summary>
         public static string WindowTitle_NuGetUpgrader {
             get {

@@ -40,7 +40,7 @@ namespace NuGet.PackageManagement.UI
 
         public NuGetProject Project { get; }
 
-        public string Title => string.Format(CultureInfo.CurrentCulture, Resources.Text_ChangesForProject, ProjectName);
+        public string Title => string.Format(CultureInfo.CurrentCulture, Resources.WindowTitle_NuGetUpgrader, ProjectName);
 
         private string ProjectName
         {

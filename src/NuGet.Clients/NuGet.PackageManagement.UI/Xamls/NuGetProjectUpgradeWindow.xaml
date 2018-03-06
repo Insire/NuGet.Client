@@ -11,12 +11,12 @@
   Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}"
   ShowInTaskbar="False"
   WindowStartupLocation="CenterOwner"
-  Title="{x:Static nuget:Resources.WindowTitle_NuGetUpgrader}"
+  Title="{Binding Title}"
   Height="600"
   MinHeight="480"
   MinWidth="640"
   Width="640"
-  d:DataContext="{d:DesignInstance Type=nuget:NuGetProjectUpgradeWindowModel, IsDesignTimeCreatable=True}" HasDialogFrame="False" ResizeMode="CanResizeWithGrip">
+  d:DataContext="{d:DesignInstance Type=nuget:NuGetProjectUpgradeWindowModel, IsDesignTimeCreatable=True}" ResizeMode="CanResizeWithGrip">
 
   <Window.Resources>
     <ResourceDictionary>
@@ -125,32 +125,21 @@
 
   <Grid>
     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="*" />
       <RowDefinition Height="1.5*" />
-      <RowDefinition />
-      <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
-
-    <TextBlock Grid.Row="0"
-               Margin="12,8,12,0"
-               Text="{Binding Title}"
-               FontSize="{Binding ElementName=_self,Path=FontSize,Converter={StaticResource Font122PercentSizeConverter}}" />
-
-    <Grid
-      Grid.Row="1"
-      Margin="12,8,12,4">
-
+    <Grid x:Name="TopLevelDependenciesGrid" Grid.Row="0" Margin="12,8,12,4">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition />
         <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
-
       <TextBlock
         Grid.Row="0"
         Margin="0,0,0,4"
-        Text="{x:Static nuget:Resources.Text_UpgraderHeader}" />
+        Text="{x:Static nuget:Resources.Text_DirectDependencies}" />      
       <ItemsControl
         Grid.Row="1"
         IsTabStop="False"
@@ -168,6 +157,23 @@
             ItemsSource="{Binding DirectDependencies}"
             IsTabStop="False" />
         </Expander>
+      </ItemsControl>
+    </Grid>
+
+    <Grid x:Name="TransitiveDependenciesGrid" Grid.Row="1" Margin="12,8,12,4">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <TextBlock
+        Grid.Row="0"
+        Margin="0,0,0,4"
+        Text="{x:Static nuget:Resources.Text_TransitiveDependencies}" />
+      <ItemsControl
+        Grid.Row="1"
+        IsTabStop="False"
+        Template="{StaticResource StandardItemsControlTemplate}">
 
         <Expander
           Template="{StaticResource SimpleExpander}"
@@ -184,7 +190,7 @@
       </ItemsControl>
     </Grid>
 
-    <Grid Grid.Row="2" Margin="12,4,12,4">
+    <Grid x:Name="PackageIssuesGrid" Grid.Row="2" Margin="12,4,12,4">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
@@ -240,24 +246,8 @@
 
       </ItemsControl>
     </Grid>
-    <StackPanel Grid.Row="3" Margin="12,4,12,4" Visibility="Collapsed">
-      <TextBlock
-        Margin="0,0,0,3"
-        Text="{x:Static nuget:Resources.Text_UpgradeOptions}"
-        TextWrapping="Wrap" />
-      <RadioButton
-        Margin="0,3"
-        Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}"
-        IsChecked="{Binding CollapseDependencies}"
-        Content="{x:Static nuget:Resources.Radio_CollapseDependencies}" />
-      <RadioButton
-        Margin="0,3"
-        Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}"
-        IsChecked="{Binding CollapseDependencies, Converter={StaticResource InverseBooleanConverter}}"
-        Content="{x:Static nuget:Resources.Radio_FlattenDependencies}" />
-    </StackPanel>
 
-    <Grid Grid.Row="4">
+    <Grid x:Name="PackageUpgraderFooterGrid" Grid.Row="3">
       <Grid.ColumnDefinitions>
         <ColumnDefinition />
         <ColumnDefinition Width="Auto" />
@@ -275,7 +265,7 @@
             NavigateUri="https://aka.ms/nugetupgradev1"
             Style="{StaticResource HyperlinkStyle}"
             Command="{x:Static nuget:PackageManagerControlCommands.OpenExternalLink}">
-            <Run Text="Learn more about upgrading" />
+            <Run Text="Help me upgrade to NuGet PackageReference" />
           </Hyperlink>
         </TextBlock>
       </StackPanel>
