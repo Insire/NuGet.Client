@@ -1343,6 +1343,15 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Help me migrate to NuGet PackageReference.
+        /// </summary>
+        public static string Text_HelpMeMigrate {
+            get {
+                return ResourceManager.GetString("Text_HelpMeMigrate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Installed version: {0}.
         /// </summary>
         public static string Text_InstalledVersion {
@@ -1955,11 +1964,11 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Upgrade NuGet format to PackageReference - {0}.
+        ///   Looks up a localized string similar to Migrate NuGet format to PackageReference - {0}.
         /// </summary>
-        public static string WindowTitle_NuGetUpgrader {
+        public static string WindowTitle_NuGetMigrator {
             get {
-                return ResourceManager.GetString("WindowTitle_NuGetUpgrader", resourceCulture);
+                return ResourceManager.GetString("WindowTitle_NuGetMigrator", resourceCulture);
             }
         }
         

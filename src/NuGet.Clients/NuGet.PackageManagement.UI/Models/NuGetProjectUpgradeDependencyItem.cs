@@ -13,9 +13,15 @@ namespace NuGet.PackageManagement.UI
         public PackageIdentity Package { get; }
         public IList<PackageIdentity> DependingPackages { get; }
 
+        public string Id { get; }
+
+        public string Version { get; }
+
         public NuGetProjectUpgradeDependencyItem(PackageIdentity package, IList<PackageIdentity> dependingPackages = null)
         {
             Package = package;
+            Id = package.Id;
+            Version = package.Version.ToNormalizedString();
             DependingPackages = dependingPackages ?? new List<PackageIdentity>();
         }
 

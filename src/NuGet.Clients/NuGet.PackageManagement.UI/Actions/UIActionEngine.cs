@@ -133,12 +133,12 @@ namespace NuGet.PackageManagement.UI
                 return collapseDependencies;
             }
 
-            collapseDependencies = upgradeInformationWindowModel.CollapseDependencies;
+            collapseDependencies = true;
 
             var progressDialogData = new ProgressDialogData(Resources.NuGetUpgrade_WaitMessage);
             string backupPath;
 
-            using (var progressDialogSession = context.StartModalProgressDialog(Resources.WindowTitle_NuGetUpgrader, progressDialogData, uiService))
+            using (var progressDialogSession = context.StartModalProgressDialog(Resources.WindowTitle_NuGetMigrator, progressDialogData, uiService))
             {
                 backupPath = await PackagesConfigToPackageReferenceMigrator.DoUpgradeAsync(
                     context,
@@ -190,11 +190,11 @@ namespace NuGet.PackageManagement.UI
                 }
                 foreach (var package in upgradeInformationWindowModel.DirectDependencies)
                 {
-                    upgradeLogger.RegisterPackage(projectName, package, true);
+                    upgradeLogger.RegisterPackage(projectName, package.Id, true);
                 }
                 foreach (var package in upgradeInformationWindowModel.TransitiveDependencies)
                 {
-                    upgradeLogger.RegisterPackage(projectName, package, false);
+                    upgradeLogger.RegisterPackage(projectName, package.Id, false);
                 }
                 return upgradeLogger.GetHtmlFilePath();
             }

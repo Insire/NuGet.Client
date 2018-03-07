@@ -18,10 +18,8 @@ namespace NuGet.PackageManagement.UI
 {
     public class NuGetProjectUpgradeWindowModel : INotifyPropertyChanged
     {
-        private IEnumerable<string> _allPackages;
-        private bool _collapseDependencies;
-        private IEnumerable<string> _dependencyPackages;
-        private IEnumerable<string> _includedCollapsedPackages;
+        private IEnumerable<NuGetProjectUpgradeDependencyItem> _dependencyPackages;
+        private IEnumerable<NuGetProjectUpgradeDependencyItem> _includedCollapsedPackages;
         private IEnumerable<NuGetProjectUpgradeDependencyItem> _upgradeDependencyItems;
         private string _projectName;
         private IList<string> _warnings;
@@ -33,14 +31,13 @@ namespace NuGet.PackageManagement.UI
         {
             PackageDependencyInfos = packageDependencyInfos;
             Project = project;
-            _collapseDependencies = collapseDependencies;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public NuGetProject Project { get; }
 
-        public string Title => string.Format(CultureInfo.CurrentCulture, Resources.WindowTitle_NuGetUpgrader, ProjectName);
+        public string Title => string.Format(CultureInfo.CurrentCulture, Resources.WindowTitle_NuGetMigrator, ProjectName);
 
         private string ProjectName
         {
@@ -63,18 +60,6 @@ namespace NuGet.PackageManagement.UI
         }
 
         public IList<PackageDependencyInfo> PackageDependencyInfos { get; }
-
-        // Changing CollapseDependencies updates the list of included packages
-        public bool CollapseDependencies
-        {
-            get { return _collapseDependencies; }
-            set
-            {
-                _collapseDependencies = value;
-                OnPropertyChanged(nameof(DirectDependencies));
-                OnPropertyChanged(nameof(TransitiveDependencies));
-            }
-        }
 
         public IEnumerable<string> Warnings
         {
@@ -117,26 +102,25 @@ namespace NuGet.PackageManagement.UI
         public IEnumerable<NuGetProjectUpgradeDependencyItem> UpgradeDependencyItems
             => _upgradeDependencyItems ?? (_upgradeDependencyItems = GetUpgradeDependencyItems());
 
-        public IEnumerable<string> DirectDependencies => CollapseDependencies ? IncludedCollapsedPackages : AllPackages;
+        public IEnumerable<NuGetProjectUpgradeDependencyItem> DirectDependencies => IncludedCollapsedPackages;
 
-        public IEnumerable<string> TransitiveDependencies => CollapseDependencies ? DependencyPackages : new List<string>();
+        public IEnumerable<NuGetProjectUpgradeDependencyItem> TransitiveDependencies => DependencyPackages;
 
-        private IEnumerable<string> DependencyPackages => _dependencyPackages ?? (_dependencyPackages = GetDependencyPackages());
+        private IEnumerable<NuGetProjectUpgradeDependencyItem> DependencyPackages => _dependencyPackages ?? (_dependencyPackages = GetDependencyPackages());
 
-        private IEnumerable<string> AllPackages => _allPackages ?? (_allPackages = UpgradeDependencyItems.Select(d => d.Package.ToString()));
+        private IEnumerable<NuGetProjectUpgradeDependencyItem> AllPackages => UpgradeDependencyItems;
 
-        private IEnumerable<string> IncludedCollapsedPackages => _includedCollapsedPackages ?? (_includedCollapsedPackages = GetIncludedCollapsedPackages());
+        private IEnumerable<NuGetProjectUpgradeDependencyItem> IncludedCollapsedPackages => _includedCollapsedPackages ?? (_includedCollapsedPackages = GetIncludedCollapsedPackages());
 
-        private IEnumerable<string> GetDependencyPackages()
+        private IEnumerable<NuGetProjectUpgradeDependencyItem> GetDependencyPackages()
         {
-            return UpgradeDependencyItems.Where(d => d.DependingPackages.Any()).Select(d => d.ToString());
+            return UpgradeDependencyItems.Where(d => d.DependingPackages.Any());
         }
 
-        private IEnumerable<string> GetIncludedCollapsedPackages()
+        private IEnumerable<NuGetProjectUpgradeDependencyItem> GetIncludedCollapsedPackages()
         {
             return UpgradeDependencyItems
-                .Where(upgradeDependencyItem => !upgradeDependencyItem.DependingPackages.Any())
-                .Select(upgradeDependencyItem => upgradeDependencyItem.Package.ToString());
+                .Where(upgradeDependencyItem => !upgradeDependencyItem.DependingPackages.Any());
         }
 
         private void InitPackageUpgradeIssues()
@@ -218,7 +202,6 @@ namespace NuGet.PackageManagement.UI
         public NuGetProjectUpgradeWindowModel()
         {
             _upgradeDependencyItems = DesignTimeUpgradeDependencyItems;
-            _collapseDependencies = true;
             _projectName = "TestProject";
             _errors = new List<string>
             {
@@ -240,7 +223,18 @@ namespace NuGet.PackageManagement.UI
         {
             new NuGetProjectUpgradeDependencyItem(PackageOne),
             new NuGetProjectUpgradeDependencyItem(PackageTwo, new List<PackageIdentity> {PackageOne}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
+            new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
             new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo})
+
         };
 #endif
     }

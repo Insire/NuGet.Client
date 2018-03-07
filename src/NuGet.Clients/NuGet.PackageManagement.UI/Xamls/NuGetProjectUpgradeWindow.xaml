@@ -114,6 +114,22 @@
           </Trigger>
         </ControlTemplate.Triggers>
       </ControlTemplate>
+      <Style TargetType="DataGridCell" x:Key="UpgraderDataGridCellStyle">
+        <Setter Property="Foreground" Value="{DynamicResource {x:Static nuget:Brushes.UIText}}" />
+        <Style.Triggers>
+          <Trigger Property="IsSelected" Value="True">
+            <Setter Property="Background" Value="{x:Null}" />
+            <Setter Property="BorderBrush" Value="{x:Null}" />
+          </Trigger>
+        </Style.Triggers>
+      </Style>
+      <Style x:Key="Migrator_DataGridColumnHeaderStyle" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="DataGridColumnHeader">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource {x:Static nuget:Brushes.BorderBrush}}"/>
+        <Setter Property="Foreground" Value="{DynamicResource {x:Static nuget:Brushes.UIText}}" />
+        <Setter Property="BorderThickness" Value="1,0,0,1"/>
+        <Setter Property="Padding" Value="3,2,2,4"/>
+      </Style>
     </ResourceDictionary>
   </Window.Resources>
 
@@ -134,30 +150,18 @@
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition />
-        <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
       <TextBlock
         Grid.Row="0"
         Margin="0,0,0,4"
-        Text="{x:Static nuget:Resources.Text_DirectDependencies}" />      
-      <ItemsControl
-        Grid.Row="1"
-        IsTabStop="False"
-        Template="{StaticResource StandardItemsControlTemplate}">
-
-        <Expander
-          Template="{StaticResource SimpleExpander}"
-          Header="{x:Static nuget:Resources.Text_DirectDependencies}"
-          IsExpanded="True"
-          Margin="0,0,0,4"
-          Visibility="{Binding DirectDependencies, Converter={StaticResource EnumerableToVisibilityConverter}}"
-          Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}">
-          <ItemsControl
-            Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}"
-            ItemsSource="{Binding DirectDependencies}"
-            IsTabStop="False" />
-        </Expander>
-      </ItemsControl>
+        Text="{x:Static nuget:Resources.Text_DirectDependencies}" />
+      <DataGrid Grid.Row="1" ItemsSource="{Binding DirectDependencies}" AutoGenerateColumns="False" RowHeaderWidth="0" GridLinesVisibility="None" Background="Transparent" RowBackground="Transparent" BorderBrush="{DynamicResource {x:Static nuget:Brushes.BorderBrush}}"
+                ColumnHeaderStyle="{StaticResource Migrator_DataGridColumnHeaderStyle}">
+        <DataGrid.Columns>
+          <DataGridTextColumn x:Name="directDependency_id" Binding="{Binding Id}" Header="Package Id" MinWidth="20" Width="4*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
+          <DataGridTextColumn x:Name="directDependency_version" Binding="{Binding Version}" Header="Version" Width="*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
+        </DataGrid.Columns>
+      </DataGrid>
     </Grid>
 
     <Grid x:Name="TransitiveDependenciesGrid" Grid.Row="1" Margin="12,8,12,4">
@@ -170,24 +174,33 @@
         Grid.Row="0"
         Margin="0,0,0,4"
         Text="{x:Static nuget:Resources.Text_TransitiveDependencies}" />
-      <ItemsControl
-        Grid.Row="1"
-        IsTabStop="False"
-        Template="{StaticResource StandardItemsControlTemplate}">
-
-        <Expander
-          Template="{StaticResource SimpleExpander}"
-          Header="{x:Static nuget:Resources.Text_TransitiveDependencies}"
-          IsExpanded="True"
-          Margin="0,0,0,4"
-          Visibility="{Binding TransitiveDependencies, Converter={StaticResource EnumerableToVisibilityConverter}}"
-          Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}">
-          <ItemsControl
-            Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}"
-            ItemsSource="{Binding TransitiveDependencies}"
-            IsTabStop="False" />
-        </Expander>
-      </ItemsControl>
+      <DataGrid Grid.Row="1" ItemsSource="{Binding TransitiveDependencies}" AutoGenerateColumns="False" RowHeaderWidth="0" GridLinesVisibility="None" Background="Transparent" RowBackground="Transparent"
+                BorderBrush="{DynamicResource {x:Static nuget:Brushes.BorderBrush}}"
+                ColumnHeaderStyle="{StaticResource Migrator_DataGridColumnHeaderStyle}">
+        <DataGrid.Columns>
+          <DataGridTextColumn x:Name="transitiveDependency_id" Binding="{Binding Id}" Header="Package Id" MinWidth="20" Width="4*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
+          <DataGridTextColumn x:Name="transitiveDependency_version" Binding="{Binding Version}" Header="Version" Width="*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
+          <DataGridTemplateColumn CellStyle="{StaticResource UpgraderDataGridCellStyle}" Width="*" IsReadOnly="True">
+            <DataGridTemplateColumn.Header>
+              <StackPanel Orientation="Horizontal">
+                <CheckBox/>
+                <TextBlock Text="Top-Level" Margin="4,0,0,0"/>
+              </StackPanel>
+            </DataGridTemplateColumn.Header>
+            <DataGridTemplateColumn.HeaderStyle>
+              <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource Migrator_DataGridColumnHeaderStyle}">
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+              </Style>
+            </DataGridTemplateColumn.HeaderStyle>
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>                
+                <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
     </Grid>
 
     <Grid x:Name="PackageIssuesGrid" Grid.Row="2" Margin="12,4,12,4">
@@ -262,10 +275,10 @@
           Width="16" />
         <TextBlock Margin="4,0,0,0">
           <Hyperlink
-            NavigateUri="https://aka.ms/nugetupgradev1"
+            NavigateUri="https://aka.ms/nuget-pc2pr-migrator"
             Style="{StaticResource HyperlinkStyle}"
             Command="{x:Static nuget:PackageManagerControlCommands.OpenExternalLink}">
-            <Run Text="Help me upgrade to NuGet PackageReference" />
+            <Run Text="{x:Static nuget:Resources.Text_HelpMeMigrate}" />
           </Hyperlink>
         </TextBlock>
       </StackPanel>

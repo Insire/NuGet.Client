@@ -741,8 +741,8 @@ Please see https://aka.ms/troubleshoot_nuget_cache for more help.</value>
   <data name="Text_ChangesForProject" xml:space="preserve">
     <value>Changes for {0}</value>
   </data>
-  <data name="WindowTitle_NuGetUpgrader" xml:space="preserve">
-    <value>Upgrade NuGet format to PackageReference - {0}</value>
+  <data name="WindowTitle_NuGetMigrator" xml:space="preserve">
+    <value>Migrate NuGet format to PackageReference - {0}</value>
     <comment>{0} is the project name</comment>
   </data>
   <data name="WindowTitle_ConvertPackagesConfigIntro" xml:space="preserve">
@@ -777,5 +777,8 @@ Please see https://aka.ms/troubleshoot_nuget_cache for more help.</value>
   </data>
   <data name="Upgrader_BackupFailed" xml:space="preserve">
     <value>The project cannot be upgraded as backing up the project file and packages.config ran into an issue.</value>
+  </data>
+  <data name="Text_HelpMeMigrate" xml:space="preserve">
+    <value>Help me migrate to NuGet PackageReference</value>
   </data>
 </root>
