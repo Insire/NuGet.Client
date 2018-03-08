@@ -3,14 +3,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using NuGet.Common;
 using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
+using NuGet.Packaging.Rules;
 using NuGet.ProjectManagement;
 using NuGet.Versioning;
 
@@ -20,11 +23,9 @@ namespace NuGet.PackageManagement.UI
     {
         private IEnumerable<NuGetProjectUpgradeDependencyItem> _dependencyPackages;
         private IEnumerable<NuGetProjectUpgradeDependencyItem> _includedCollapsedPackages;
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> _upgradeDependencyItems;
+        private ObservableCollection<NuGetProjectUpgradeDependencyItem> _upgradeDependencyItems;
+        private HashSet<PackageIdentity> _notFoundPackages;
         private string _projectName;
-        private IList<string> _warnings;
-        private IList<string> _errors;
-        private IList<PackageIdentity> _notFoundPackages;
 
         public NuGetProjectUpgradeWindowModel(NuGetProject project, IList<PackageDependencyInfo> packageDependencyInfos,
             bool collapseDependencies)
@@ -61,45 +62,19 @@ namespace NuGet.PackageManagement.UI
 
         public IList<PackageDependencyInfo> PackageDependencyInfos { get; }
 
-        public IEnumerable<string> Warnings
+        public IEnumerable<PackageIdentity> NotFoundPackages
         {
             get
             {
-                if (_warnings == null)
+                if(_notFoundPackages == null)
                 {
-                    InitPackageUpgradeIssues();
-                }
-                return _warnings;
-            }
-        }
-
-        public IEnumerable<string> Errors
-        {
-            get
-            {
-                if (_errors == null)
-                {
-                    InitPackageUpgradeIssues();
-                }
-                return _errors;
-            }
-        }
-
-        public IList<PackageIdentity> NotFoundPackages
-        {
-            get
-            {
-                if (_notFoundPackages == null)
-                {
-                    InitPackageUpgradeIssues();
+                    GetUpgradeDependencyItems();
                 }
                 return _notFoundPackages;
             }
         }
 
-        public bool HasIssues => Errors.Any() || Warnings.Any();
-
-        public IEnumerable<NuGetProjectUpgradeDependencyItem> UpgradeDependencyItems
+        internal ObservableCollection<NuGetProjectUpgradeDependencyItem> UpgradeDependencyItems
             => _upgradeDependencyItems ?? (_upgradeDependencyItems = GetUpgradeDependencyItems());
 
         public IEnumerable<NuGetProjectUpgradeDependencyItem> DirectDependencies => IncludedCollapsedPackages;
@@ -108,7 +83,7 @@ namespace NuGet.PackageManagement.UI
 
         private IEnumerable<NuGetProjectUpgradeDependencyItem> DependencyPackages => _dependencyPackages ?? (_dependencyPackages = GetDependencyPackages());
 
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> AllPackages => UpgradeDependencyItems;
+        public IEnumerable<NuGetProjectUpgradeDependencyItem> AllPackages => UpgradeDependencyItems;
 
         private IEnumerable<NuGetProjectUpgradeDependencyItem> IncludedCollapsedPackages => _includedCollapsedPackages ?? (_includedCollapsedPackages = GetIncludedCollapsedPackages());
 
@@ -123,62 +98,38 @@ namespace NuGet.PackageManagement.UI
                 .Where(upgradeDependencyItem => !upgradeDependencyItem.DependingPackages.Any());
         }
 
-        private void InitPackageUpgradeIssues()
+        private void InitPackageUpgradeIssues(FolderNuGetProject folderNuGetProject, NuGetProjectUpgradeDependencyItem package, NuGetFramework framework)
         {
-            _warnings = new List<string>();
-            _errors = new List<string>();
-            _notFoundPackages = new List<PackageIdentity>();
-
-            var msBuildNuGetProject = (MSBuildNuGetProject)Project;
-            var framework = msBuildNuGetProject.ProjectSystem.TargetFramework;
-            var folderNuGetProject = msBuildNuGetProject.FolderNuGetProject;
-
-            foreach (var package in PackageDependencyInfos)
-            {
-                // We create a new PackageIdentity here, otherwise we would be passing in a PackageDependencyInfo
-                // which includes dependencies in its ToString().
-                InitPackageUpgradeIssues(folderNuGetProject, new PackageIdentity(package.Id, package.Version), framework);
-            }
-        }
-
-        private void InitPackageUpgradeIssues(FolderNuGetProject folderNuGetProject, PackageIdentity packageIdentity, NuGetFramework framework)
-        {
+            _notFoundPackages = new HashSet<PackageIdentity>();
+            var packageIdentity = new PackageIdentity(package.Id, NuGetVersion.Parse(package.Version));
             // Confirm package exists
             var packagePath = folderNuGetProject.GetInstalledPackageFilePath(packageIdentity);
             if (string.IsNullOrEmpty(packagePath))
             {
-                _errors.Add(string.Format(CultureInfo.CurrentCulture, Resources.NuGetUpgradeError_CannotFindPackage, packageIdentity));
                 _notFoundPackages.Add(packageIdentity);
+                package.Issues.Add(PackLogMessage.CreateWarning(
+                    string.Format(CultureInfo.CurrentCulture, Resources.Upgrader_PackageNotFound, packageIdentity.Id),
+                    NuGetLogCode.NU5500));
             }
             else
             {
                 var reader = new PackageArchiveReader(packagePath);
 
-                // Check if it has content files
-                var contentFilesGroup = MSBuildNuGetProjectSystemUtility.GetMostCompatibleGroup(framework,
-                    reader.GetContentItems());
-                if (MSBuildNuGetProjectSystemUtility.IsValid(contentFilesGroup) && contentFilesGroup.Items.Any())
-                {
-                    _warnings.Add(string.Format(CultureInfo.CurrentCulture, Resources.NuGetUpgradeWarning_HasContentFiles, packageIdentity));
-                }
+                // TODO: Create the right set of rules here.
+                var packageRules = PackageCreationRuleSet.Rules;
+                var issues = package.Issues;
 
-                // Check if it has an install.ps1 file
-                var toolItemsGroup = MSBuildNuGetProjectSystemUtility.GetMostCompatibleGroup(framework,
-                    reader.GetToolItems());
-                toolItemsGroup = MSBuildNuGetProjectSystemUtility.Normalize(toolItemsGroup);
-                var isValid = MSBuildNuGetProjectSystemUtility.IsValid(toolItemsGroup);
-                var hasInstall = isValid && toolItemsGroup.Items.Any(p => p.EndsWith(Path.DirectorySeparatorChar + PowerShellScripts.Install, StringComparison.OrdinalIgnoreCase));
-                if (hasInstall)
+                foreach (var rule in packageRules)
                 {
-                    _warnings.Add(string.Format(CultureInfo.CurrentCulture, Resources.NuGetUpgradeWarning_HasInstallScript, packageIdentity));
+                    issues.AddRange(rule.Validate(reader).OrderBy(p => p.Code.ToString(), StringComparer.CurrentCulture));
                 }
             }
         }
 
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> GetUpgradeDependencyItems()
+        private ObservableCollection<NuGetProjectUpgradeDependencyItem> GetUpgradeDependencyItems()
         {
-            var upgradeDependencyItems = PackageDependencyInfos
-                .Select(p => new NuGetProjectUpgradeDependencyItem(new PackageIdentity(p.Id, p.Version))).ToList();
+            var upgradeDependencyItems = new ObservableCollection<NuGetProjectUpgradeDependencyItem>(PackageDependencyInfos
+                .Select(p => new NuGetProjectUpgradeDependencyItem(new PackageIdentity(p.Id, p.Version))).ToList());
 
             foreach (var packageDependencyInfo in PackageDependencyInfos)
             {
@@ -188,6 +139,15 @@ namespace NuGet.PackageManagement.UI
                         .FirstOrDefault(d => (d.Package.Id == dependency.Id) && (d.Package.Version == dependency.VersionRange.MinVersion));
                     matchingDependencyItem?.DependingPackages.Add(new PackageIdentity(packageDependencyInfo.Id, packageDependencyInfo.Version));
                 }
+            }
+
+            var msBuildNuGetProject = (MSBuildNuGetProject)Project;
+            var framework = msBuildNuGetProject.ProjectSystem.TargetFramework;
+            var folderNuGetProject = msBuildNuGetProject.FolderNuGetProject;
+
+            foreach (var package in upgradeDependencyItems)
+            {
+                InitPackageUpgradeIssues(folderNuGetProject, package, framework);
             }
 
             return upgradeDependencyItems;
@@ -203,23 +163,13 @@ namespace NuGet.PackageManagement.UI
         {
             _upgradeDependencyItems = DesignTimeUpgradeDependencyItems;
             _projectName = "TestProject";
-            _errors = new List<string>
-            {
-                string.Format(CultureInfo.CurrentCulture, Resources.NuGetUpgradeError_CannotFindPackage, PackageTwo)
-            };
-            _warnings = new List<string>
-            {
-                string.Format(CultureInfo.CurrentCulture, Resources.NuGetUpgradeWarning_HasContentFiles, PackageOne),
-                string.Format(CultureInfo.CurrentCulture, Resources.NuGetUpgradeWarning_HasInstallScript, PackageOne),
-                string.Format(CultureInfo.CurrentCulture, Resources.NuGetUpgradeWarning_HasInstallScript, PackageThree)
-            };
         }
 
         private static readonly PackageIdentity PackageOne = new PackageIdentity("Test.Package.One", new NuGetVersion("1.2.3"));
         private static readonly PackageIdentity PackageTwo = new PackageIdentity("Test.Package.Two", new NuGetVersion("4.5.6"));
         private static readonly PackageIdentity PackageThree = new PackageIdentity("Test.Package.Three", new NuGetVersion("7.8.9"));
 
-        private static readonly IEnumerable<NuGetProjectUpgradeDependencyItem> DesignTimeUpgradeDependencyItems = new List<NuGetProjectUpgradeDependencyItem>
+        private static readonly ObservableCollection<NuGetProjectUpgradeDependencyItem> DesignTimeUpgradeDependencyItems = new ObservableCollection<NuGetProjectUpgradeDependencyItem>(new List<NuGetProjectUpgradeDependencyItem>
         {
             new NuGetProjectUpgradeDependencyItem(PackageOne),
             new NuGetProjectUpgradeDependencyItem(PackageTwo, new List<PackageIdentity> {PackageOne}),
@@ -235,7 +185,7 @@ namespace NuGet.PackageManagement.UI
             new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo}),
             new NuGetProjectUpgradeDependencyItem(PackageThree, new List<PackageIdentity> {PackageOne, PackageTwo})
 
-        };
+        });
 #endif
     }
 }

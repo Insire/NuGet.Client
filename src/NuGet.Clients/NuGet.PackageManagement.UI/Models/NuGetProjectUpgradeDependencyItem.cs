@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using NuGet.Packaging.Core;
 using System.Globalization;
 using System.Linq;
+using NuGet.Common;
 
 namespace NuGet.PackageManagement.UI
 {
@@ -13,9 +14,13 @@ namespace NuGet.PackageManagement.UI
         public PackageIdentity Package { get; }
         public IList<PackageIdentity> DependingPackages { get; }
 
+        public IList<PackLogMessage> Issues { get; }
+
         public string Id { get; }
 
         public string Version { get; }
+
+        public bool PromoteToTopLevel { get; set; }
 
         public NuGetProjectUpgradeDependencyItem(PackageIdentity package, IList<PackageIdentity> dependingPackages = null)
         {
@@ -23,6 +28,8 @@ namespace NuGet.PackageManagement.UI
             Id = package.Id;
             Version = package.Version.ToNormalizedString();
             DependingPackages = dependingPackages ?? new List<PackageIdentity>();
+            Issues = new List<PackLogMessage>();
+            PromoteToTopLevel = false;
         }
 
         public override string ToString()

@@ -1865,6 +1865,15 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to determine compatibility of package as {0}.nupkg was not found on disk..
+        /// </summary>
+        public static string Upgrader_PackageNotFound {
+            get {
+                return ResourceManager.GetString("Upgrader_PackageNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Blocked by package.config.
         /// </summary>
         public static string Version_Blocked {
