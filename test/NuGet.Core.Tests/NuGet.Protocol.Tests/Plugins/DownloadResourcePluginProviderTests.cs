@@ -173,7 +173,7 @@ namespace NuGet.Protocol.Plugins.Tests
 
         private static PluginResourceProvider CreatePluginResourceProvider(bool createResource)
         {
-            var provider = new Mock<PluginResourceProvider>(new PluginManager());
+            var provider = new Mock<PluginResourceProvider>();
 
             provider.Setup(x => x.Name)
                 .Returns(nameof(PluginResourceProvider));

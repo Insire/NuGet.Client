@@ -26,13 +26,18 @@ namespace NuGet.Protocol.Core.Types
 
         private PluginManager _pluginManager;
 
+        public PluginResourceProvider()
+            : this(pluginManager: PluginManager.Instance)
+        {
+        }
+
         /// <summary>
         /// Initializes a new <see cref="PluginResourceProvider" /> class.
         /// </summary>
-        public PluginResourceProvider(PluginManager pluginManager = null)
+        public PluginResourceProvider(PluginManager pluginManager)
             : base(typeof(PluginResource), nameof(PluginResourceProvider))
         {
-            _pluginManager = pluginManager ?? PluginManager.Instance;
+            _pluginManager = pluginManager
         }
 
         /// <summary>
