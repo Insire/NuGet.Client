@@ -25,6 +25,9 @@ namespace NuGet.Protocol.Core.Types
     /// <remarks>This is unsealed only to facilitate testing.</remarks>
     public class PluginManager : IDisposable
     {
+
+        public static PluginManager Instance  = new PluginManager();
+
         private const string _idleTimeoutEnvironmentVariable = "NUGET_PLUGIN_IDLE_TIMEOUT_IN_SECONDS";
         private const string _pluginPathsEnvironmentVariable = "NUGET_PLUGIN_PATHS";
 
@@ -96,7 +99,7 @@ namespace NuGet.Protocol.Core.Types
                     var serviceIndexJson = JObject.Parse(serviceIndex.Json);
                     var results = await _discoverer.Value.DiscoverAsync(cancellationToken);
 
-                    var pluginCreationResults = await TryCreatePlugin(
+                    var pluginCreationResults = await TryCreate(
                         source.PackageSource,
                         serviceIndexJson,
                         cancellationToken);
@@ -108,7 +111,7 @@ namespace NuGet.Protocol.Core.Types
             return null;
         }
 
-        public async Task<IEnumerable<PluginCreationResult>> TryCreatePlugin(
+        public async Task<IEnumerable<PluginCreationResult>> TryCreate(
             PackageSource source,
             JObject serviceIndexJson,
             CancellationToken cancellationToken)

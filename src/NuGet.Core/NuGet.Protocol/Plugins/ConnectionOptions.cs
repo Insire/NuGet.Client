@@ -142,7 +142,6 @@ namespace NuGet.Protocol.Plugins
             var handshakeTimeout = TimeoutUtilities.GetTimeout(handshakeTimeoutInSeconds, ProtocolConstants.HandshakeTimeout);
             var requestTimeout = TimeoutUtilities.GetTimeout(requestTimeoutInSeconds, ProtocolConstants.RequestTimeout);
 
-            // TODO NK - default. 
             return new ConnectionOptions(
                 protocolVersion: ProtocolConstants.CurrentVersion,
                 minimumProtocolVersion: ProtocolConstants.PluginVersion100,
