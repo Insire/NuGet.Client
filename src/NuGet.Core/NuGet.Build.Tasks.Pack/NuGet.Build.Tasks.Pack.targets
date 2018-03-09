@@ -53,10 +53,10 @@ Copyright (c) .NET Foundation. All rights reserved.
     <GenerateNuspecDependsOn>Build;$(GenerateNuspecDependsOn)</GenerateNuspecDependsOn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(NuspecFile)' == '' ">
-    <GenerateNuspecDependsOn>$(GenerateNuspecDependsOn); _GenerateNuspecUsingProjectFile</GenerateNuspecDependsOn>
+    <GenerateNuspecDependsOn>$(GenerateNuspecDependsOn); _GenerateNuspecUsingProjectFile;_GenerateNuspecCommon</GenerateNuspecDependsOn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(NuspecFile)' != '' ">
-    <GenerateNuspecDependsOn>$(GenerateNuspecDependsOn); _GenerateNuspecUsingNuspecFile</GenerateNuspecDependsOn>
+    <GenerateNuspecDependsOn>$(GenerateNuspecDependsOn); _GenerateNuspecUsingNuspecFile;_GenerateNuspecCommon</GenerateNuspecDependsOn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectCapability Include="Pack"/>
@@ -200,7 +200,9 @@ Copyright (c) .NET Foundation. All rights reserved.
 
   <Target Name="GenerateNuspec" DependsOnTargets="$(GenerateNuspecDependsOn)" />
 
-  <Target Name="_GenerateNuspecCommon" DependsOnTargets="_CalculateInputsOutputsForPack;_GetProjectReferenceVersions">
+  <Target Name="_GenerateNuspecCommon"
+          DependsOnTargets="_CalculateInputsOutputsForPack;_GetProjectReferenceVersions"
+          Condition="'$(RunNuspecPackTask)' == 'true'">
     <!-- Call Pack -->
     <PackTask PackItem="$(PackProjectInputFile)"
               PackageFiles="@(_PackageFiles)"
@@ -248,10 +250,21 @@ Copyright (c) .NET Foundation. All rights reserved.
               AllowedOutputExtensionsInSymbolsPackageBuildOutputFolder="$(AllowedOutputExtensionsInSymbolsPackageBuildOutputFolder)"/>
   </Target>
 
-  <Target Name="_GenerateNuspecUsingProjectFile" DependsOnTargets="_GenerateNuspecCommon" Condition="'$(IsPackable)' == 'true'"
-          Inputs="@(NuGetPackInput)" Outputs="@(NuGetPackOutput)" />
+  <Target Name="_GenerateNuspecUsingProjectFile"
+          DependsOnTargets="_CalculateInputsOutputsForPack;_GetProjectReferenceVersions"
+          Condition="'$(IsPackable)' == 'true'"
+          Inputs="@(NuGetPackInput)" Outputs="@(NuGetPackOutput)">
+    <CreateProperty Value="true">
+      <Output PropertyName="RunNuspecPackTask" TaskParameter="ValueSetByTask" />
+    </CreateProperty>
+  </Target>
 
-  <Target Name="_GenerateNuspecUsingNuspecFile" DependsOnTargets="_GenerateNuspecCommon" Condition="'$(IsPackable)' == 'true'" />
+  <Target Name="_GenerateNuspecUsingNuspecFile"
+          Condition="'$(IsPackable)' == 'true'">
+    <CreateProperty Value="true">
+      <Output PropertyName="RunNuspecPackTask" TaskParameter="ValueSetByTask" />
+    </CreateProperty>
+  </Target>
 
   <!--
     ============================================================
