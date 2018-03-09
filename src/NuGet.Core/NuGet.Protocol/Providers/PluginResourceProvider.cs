@@ -244,19 +244,37 @@ namespace NuGet.Protocol.Core.Types
             JObject serviceIndex,
             CancellationToken cancellationToken)
         {
-            var payload = new GetOperationClaimsRequest(packageSourceRepository, serviceIndex);
-
-            var response = await plugin.Connection.SendRequestAndReceiveResponseAsync<GetOperationClaimsRequest, GetOperationClaimsResponse>(
-                MessageMethod.GetOperationClaims,
-                payload,
-                cancellationToken);
-
-            if (response == null)
+            if (plugin.Connection.Equals(Plugins.ProtocolConstants.CurrentVersion))
             {
-                return new List<OperationClaim>();
+                var payload = new GetSourceOperationClaimsRequest(packageSourceRepository);
+
+                var response = await plugin.Connection.SendRequestAndReceiveResponseAsync<GetSourceOperationClaimsRequest, GetSourceOperationClaimsResponse>(
+                    MessageMethod.GetOperationClaims,
+                    payload,
+                    cancellationToken);
+                if (response == null)
+                {
+                    return new List<OperationClaim>();
+                }
+
+                return response.Claims;
+            }
+            else
+            {
+                var payload = new GetOperationClaimsRequest(packageSourceRepository, serviceIndex);
+
+                var response = await plugin.Connection.SendRequestAndReceiveResponseAsync<GetOperationClaimsRequest, GetOperationClaimsResponse>(
+                    MessageMethod.GetOperationClaims,
+                    payload,
+                    cancellationToken);
+                if (response == null)
+                {
+                    return new List<OperationClaim>();
+                }
+
+                return response.Claims;
             }
 
-            return response.Claims;
         }
 
         private PluginDiscoverer InitializeDiscoverer()
