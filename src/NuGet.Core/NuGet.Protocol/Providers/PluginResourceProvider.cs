@@ -37,7 +37,7 @@ namespace NuGet.Protocol.Core.Types
         public PluginResourceProvider(PluginManager pluginManager)
             : base(typeof(PluginResource), nameof(PluginResourceProvider))
         {
-            _pluginManager = pluginManager
+            _pluginManager = pluginManager;
         }
 
         /// <summary>
