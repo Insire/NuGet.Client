@@ -283,6 +283,7 @@ namespace NuGet.Protocol.Plugins
                 plugin.Dispose();
             }
         }
+        // TODO NK - we need to add an explicit dispose method.
 
         private void OnPluginFaulted(object sender, FaultedPluginEventArgs e)
         {

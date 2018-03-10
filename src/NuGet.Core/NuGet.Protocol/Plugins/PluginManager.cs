@@ -25,8 +25,8 @@ namespace NuGet.Protocol.Core.Types
     /// <remarks>This is unsealed only to facilitate testing.</remarks>
     public class PluginManager : IDisposable
     {
-
-        public static PluginManager Instance  = new PluginManager();
+        private static readonly Lazy<PluginManager> Lazy = new Lazy<PluginManager>(() => new PluginManager());
+        public static PluginManager Instance { get { return Lazy.Value; } }
 
         private const string _idleTimeoutEnvironmentVariable = "NUGET_PLUGIN_IDLE_TIMEOUT_IN_SECONDS";
         private const string _pluginPathsEnvironmentVariable = "NUGET_PLUGIN_PATHS";
@@ -35,7 +35,7 @@ namespace NuGet.Protocol.Core.Types
         private Lazy<IPluginDiscoverer> _discoverer;
         private bool _isDisposed;
         private IPluginFactory _pluginFactory;
-        private ConcurrentDictionary<PluginPackageSourceKey, Lazy<Task<IReadOnlyList<OperationClaim>>>> _pluginOperationClaims;
+        private ConcurrentDictionary<PluginRequestKey, Lazy<Task<IReadOnlyList<OperationClaim>>>> _pluginOperationClaims;
         private ConcurrentDictionary<string, Lazy<IPluginMulticlientUtilities>> _pluginUtilities;
         private string _rawPluginPaths;
 
@@ -47,10 +47,11 @@ namespace NuGet.Protocol.Core.Types
         /// <remarks>This is non-private only to facilitate testing.</remarks>
         public IEnvironmentVariableReader EnvironmentVariableReader { get; private set; }
 
+
         /// <summary>
         /// Initializes a new <see cref="PluginManager" /> class.
         /// </summary>
-        public PluginManager()
+        private PluginManager()
         {
             Reinitialize(
                 new EnvironmentVariableWrapper(),
@@ -97,7 +98,6 @@ namespace NuGet.Protocol.Core.Types
                 if (serviceIndex != null)
                 {
                     var serviceIndexJson = JObject.Parse(serviceIndex.Json);
-                    var results = await _discoverer.Value.DiscoverAsync(cancellationToken);
 
                     var pluginCreationResults = await TryCreate(
                         source.PackageSource,
@@ -109,6 +109,11 @@ namespace NuGet.Protocol.Core.Types
             }
 
             return null;
+        }
+
+        public async Task<IEnumerable<PluginDiscoveryResult>> FindAvailablePlugins(CancellationToken cancellationToken)
+        {
+            return await _discoverer.Value.DiscoverAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<PluginCreationResult>> TryCreate(
@@ -127,72 +132,80 @@ namespace NuGet.Protocol.Core.Types
             // Fast path
             if (source.IsHttp && IsPluginPossiblyAvailable())
             {
-                var results = await _discoverer.Value.DiscoverAsync(cancellationToken);
+                var results = await FindAvailablePlugins(cancellationToken);
 
                 foreach (var result in results)
                 {
-                    PluginCreationResult pluginCreationResult = null;
-
-                    if (result.PluginFile.State == PluginFileState.Valid)
-                    {
-                        var plugin = await _pluginFactory.GetOrCreateAsync(
-                            result.PluginFile.Path,
-                            PluginConstants.PluginArguments,
-                            new RequestHandlers(),
-                            _connectionOptions,
-                            cancellationToken);
-
-                        var utilities = _pluginUtilities.GetOrAdd(
-                            plugin.Id,
-                            path => new Lazy<IPluginMulticlientUtilities>(
-                                () => new PluginMulticlientUtilities()));
-
-                        await utilities.Value.DoOncePerPluginLifetimeAsync(
-                            MessageMethod.MonitorNuGetProcessExit.ToString(),
-                            () => plugin.Connection.SendRequestAndReceiveResponseAsync<MonitorNuGetProcessExitRequest, MonitorNuGetProcessExitResponse>(
-                                MessageMethod.MonitorNuGetProcessExit,
-                                new MonitorNuGetProcessExitRequest(_currentProcessId.Value),
-                                cancellationToken),
-                            cancellationToken);
-
-                        await utilities.Value.DoOncePerPluginLifetimeAsync(
-                            MessageMethod.Initialize.ToString(),
-                            () => InitializePluginAsync(plugin, _connectionOptions.RequestTimeout, cancellationToken),
-                            cancellationToken);
-
-                        var lazyOperationClaims = _pluginOperationClaims.GetOrAdd(
-                                new PluginPackageSourceKey(result.PluginFile.Path, source.Source),
-                                key => new Lazy<Task<IReadOnlyList<OperationClaim>>>(() =>
-                                (
-                                plugin.Connection.ProtocolVersion.Equals(Plugins.ProtocolConstants.CurrentVersion) ?
-                                GetPluginGetSourceOperationClaims(
-                                    plugin,
-                                    source.Source,
-                                    cancellationToken)
-                                    :
-                                GetPluginOperationClaimsAsync(
-                                    plugin,
-                                    source.Source,
-                                    serviceIndexJson,
-                                    cancellationToken))));
-
-                        await lazyOperationClaims.Value;
-
-                        pluginCreationResult = new PluginCreationResult(
-                            plugin,
-                            utilities.Value,
-                            lazyOperationClaims.Value.Result);
-                    }
-                    else
-                    {
-                        pluginCreationResult = new PluginCreationResult(result.Message);
-                    }
+                    var pluginCreationResult = await CreatePlugin(source, serviceIndexJson, result, cancellationToken);
 
                     pluginCreationResults.Add(pluginCreationResult);
                 }
             }
 
             return pluginCreationResults;
+        }
+
+        public async Task<PluginCreationResult> CreatePlugin(PackageSource source, JObject serviceIndexJson, PluginDiscoveryResult result, CancellationToken cancellationToken)
+        {
+            PluginCreationResult pluginCreationResult = null;
+
+            if (result.PluginFile.State == PluginFileState.Valid)
+            {
+                // TODO NK - What happens when a plugin dies because of idleness and a new operation comes that needs the plugin
+                var plugin = await _pluginFactory.GetOrCreateAsync(
+                    result.PluginFile.Path,
+                    PluginConstants.PluginArguments,
+                    new RequestHandlers(),
+                    _connectionOptions,
+                    cancellationToken);
+
+                var utilities = _pluginUtilities.GetOrAdd(
+                    plugin.Id,
+                    path => new Lazy<IPluginMulticlientUtilities>(
+                        () => new PluginMulticlientUtilities()));
+
+                await utilities.Value.DoOncePerPluginLifetimeAsync(
+                    MessageMethod.MonitorNuGetProcessExit.ToString(),
+                    () => plugin.Connection.SendRequestAndReceiveResponseAsync<MonitorNuGetProcessExitRequest, MonitorNuGetProcessExitResponse>(
+                        MessageMethod.MonitorNuGetProcessExit,
+                        new MonitorNuGetProcessExitRequest(_currentProcessId.Value),
+                        cancellationToken),
+                    cancellationToken);
+
+                await utilities.Value.DoOncePerPluginLifetimeAsync(
+                    MessageMethod.Initialize.ToString(),
+                    () => InitializePluginAsync(plugin, _connectionOptions.RequestTimeout, cancellationToken),
+                    cancellationToken);
+
+                var lazyOperationClaims = _pluginOperationClaims.GetOrAdd(
+                        new PluginRequestKey(result.PluginFile.Path, source.Source),
+                        key => new Lazy<Task<IReadOnlyList<OperationClaim>>>(() =>
+                        (
+                        plugin.Connection.ProtocolVersion.Equals(Plugins.ProtocolConstants.CurrentVersion) ?
+                        GetPluginGetSourceOperationClaims(
+                            plugin,
+                            source.Source,
+                            cancellationToken)
+                            :
+                        GetPluginOperationClaimsAsync(
+                            plugin,
+                            source.Source,
+                            serviceIndexJson,
+                            cancellationToken))));
+
+                await lazyOperationClaims.Value;
+
+                pluginCreationResult = new PluginCreationResult(
+                    plugin,
+                    utilities.Value,
+                    lazyOperationClaims.Value.Result);
+            }
+            else
+            {
+                pluginCreationResult = new PluginCreationResult(result.Message);
+            }
+
+            return pluginCreationResult;
         }
 
         /// <summary>
@@ -212,22 +225,14 @@ namespace NuGet.Protocol.Core.Types
             Lazy<IPluginDiscoverer> pluginDiscoverer,
             Func<TimeSpan, IPluginFactory> pluginFactoryCreator)
         {
-            if (reader == null)
-            {
-                throw new ArgumentNullException(nameof(reader));
-            }
-
-            if (pluginDiscoverer == null)
-            {
-                throw new ArgumentNullException(nameof(pluginDiscoverer));
-            }
+            EnvironmentVariableReader = reader ?? throw new ArgumentNullException(nameof(reader));
+            _discoverer = pluginDiscoverer ?? throw new ArgumentNullException(nameof(pluginDiscoverer));
 
             if (pluginFactoryCreator == null)
             {
                 throw new ArgumentNullException(nameof(pluginFactoryCreator));
             }
 
-            EnvironmentVariableReader = reader;
             _rawPluginPaths = reader.GetEnvironmentVariable(_pluginPathsEnvironmentVariable);
 
             _connectionOptions = ConnectionOptions.CreateDefault(reader);
@@ -235,32 +240,31 @@ namespace NuGet.Protocol.Core.Types
             var idleTimeoutInSeconds = EnvironmentVariableReader.GetEnvironmentVariable(_idleTimeoutEnvironmentVariable);
             var idleTimeout = TimeoutUtilities.GetTimeout(idleTimeoutInSeconds, PluginConstants.IdleTimeout);
 
-            _discoverer = pluginDiscoverer;
             _pluginFactory = pluginFactoryCreator(idleTimeout);
-            _pluginOperationClaims = new ConcurrentDictionary<PluginPackageSourceKey, Lazy<Task<IReadOnlyList<OperationClaim>>>>();
+            _pluginOperationClaims = new ConcurrentDictionary<PluginRequestKey, Lazy<Task<IReadOnlyList<OperationClaim>>>>();
             _pluginUtilities = new ConcurrentDictionary<string, Lazy<IPluginMulticlientUtilities>>(
                 StringComparer.OrdinalIgnoreCase);
         }
 
-        
+
 
         private async Task<IReadOnlyList<OperationClaim>> GetPluginGetSourceOperationClaims(
             IPlugin plugin,
             string packageSourceRepository,
             CancellationToken cancellationToken)
         {
-                var payload = new GetSourceOperationClaimsRequest(packageSourceRepository);
+            var payload = new GetSourceOperationClaimsRequest(packageSourceRepository);
 
-                var response = await plugin.Connection.SendRequestAndReceiveResponseAsync<GetSourceOperationClaimsRequest, GetSourceOperationClaimsResponse>(
-                    MessageMethod.GetOperationClaims,
-                    payload,
-                    cancellationToken);
-                if (response == null)
-                {
-                    return new List<OperationClaim>();
-                }
+            var response = await plugin.Connection.SendRequestAndReceiveResponseAsync<GetSourceOperationClaimsRequest, GetSourceOperationClaimsResponse>(
+                MessageMethod.GetOperationClaims,
+                payload,
+                cancellationToken);
+            if (response == null)
+            {
+                return new List<OperationClaim>();
+            }
 
-                return response.Claims;
+            return response.Claims;
         }
 
         private async Task<IReadOnlyList<OperationClaim>> GetPluginOperationClaimsAsync(
@@ -328,12 +332,12 @@ namespace NuGet.Protocol.Core.Types
             plugin.Connection.Options.SetRequestTimeout(requestTimeout);
         }
 
-        private sealed class PluginPackageSourceKey : IEquatable<PluginPackageSourceKey>
+        private sealed class PluginRequestKey : IEquatable<PluginRequestKey>
         {
             internal string PluginFilePath { get; }
             internal string PackageSourceRepository { get; }
 
-            internal PluginPackageSourceKey(string pluginFilePath, string packageSourceRepository)
+            internal PluginRequestKey(string pluginFilePath, string packageSourceRepository)
             {
                 PluginFilePath = pluginFilePath;
                 PackageSourceRepository = packageSourceRepository;
@@ -341,7 +345,7 @@ namespace NuGet.Protocol.Core.Types
 
             public override bool Equals(object obj)
             {
-                return Equals(obj as PluginPackageSourceKey);
+                return Equals(obj as PluginRequestKey);
             }
 
             public override int GetHashCode()
@@ -349,7 +353,7 @@ namespace NuGet.Protocol.Core.Types
                 return HashCodeCombiner.GetHashCode(PluginFilePath, PackageSourceRepository);
             }
 
-            public bool Equals(PluginPackageSourceKey other)
+            public bool Equals(PluginRequestKey other)
             {
                 if (ReferenceEquals(this, other))
                 {

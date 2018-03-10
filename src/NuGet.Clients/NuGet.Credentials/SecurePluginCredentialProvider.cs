@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NuGet.Configuration;
@@ -24,6 +21,11 @@ namespace NuGet.Credentials
             Id = $"{nameof(SecurePluginCredentialProvider)}_{Plugin.Id}";
         }
 
+        /// <summary>
+        /// Unique identifier of this credential provider
+        /// </summary>
+        public string Id { get; }
+
         /// <param name="uri">The uri of a web resource for which credentials are needed.</param>
         /// <param name="proxy">Ignored.  Proxy information will not be passed to plugins.</param>
         /// <param name="type">
@@ -37,12 +39,6 @@ namespace NuGet.Credentials
         /// <param name="nonInteractive">If true, the plugin must not prompt for credentials.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A credential object.  If </returns>
-
-
-        /// <summary>
-        /// Unique identifier of this credential provider
-        /// </summary>
-        public string Id { get; }
 
         public async Task<CredentialResponse> GetAsync(Uri uri, IWebProxy proxy, CredentialRequestType type, string message, bool isRetry, bool nonInteractive, CancellationToken cancellationToken)
         {
@@ -85,4 +81,5 @@ namespace NuGet.Credentials
 
             return taskResponse;
         }
+    }
 }

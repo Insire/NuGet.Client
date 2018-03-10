@@ -24,20 +24,10 @@ namespace NuGet.Protocol.Core.Types
     public class PluginResourceProvider : ResourceProvider
     {
 
-        private PluginManager _pluginManager;
 
         public PluginResourceProvider()
-            : this(pluginManager: PluginManager.Instance)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new <see cref="PluginResourceProvider" /> class.
-        /// </summary>
-        public PluginResourceProvider(PluginManager pluginManager)
             : base(typeof(PluginResource), nameof(PluginResourceProvider))
         {
-            _pluginManager = pluginManager;
         }
 
         /// <summary>
@@ -63,7 +53,7 @@ namespace NuGet.Protocol.Core.Types
 
             PluginResource resource = null;
 
-            var pluginCreationResults = await _pluginManager.TryCreate(source, cancellationToken);
+            var pluginCreationResults = await PluginManager.Instance.TryCreate(source, cancellationToken);
 
             if (pluginCreationResults != null && pluginCreationResults.Any())
             {
