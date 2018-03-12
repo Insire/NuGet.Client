@@ -7,7 +7,7 @@ namespace NuGet.Credentials
 {
     public class SecureCredentialProviderBuilder
     {
-        public SecureCredentialProviderBuilder(PluginManager pluginManager)
+        public SecureCredentialProviderBuilder()
         {
 
         }

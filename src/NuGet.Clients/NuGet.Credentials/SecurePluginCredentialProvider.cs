@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using NuGet.Configuration;
+using NuGet.Protocol.Core.Types;
 using NuGet.Protocol.Plugins;
 using NuGet.Protocol.Plugins.Messages;
 
@@ -11,14 +12,14 @@ namespace NuGet.Credentials
     public class SecurePluginCredentialProvider : ICredentialProvider
     {
 
-        private IPlugin Plugin { get; set; }
+        private PluginDiscoveryResult DiscoveredPlugin { get; set; }
         private Common.ILogger Logger { get; set; }
 
-        public SecurePluginCredentialProvider(IPlugin plugin, Common.ILogger logger)
+        public SecurePluginCredentialProvider(PluginDiscoveryResult plugin, Common.ILogger logger)
         {
-            Plugin = plugin;
+            DiscoveredPlugin = plugin;
             Logger = logger;
-            Id = $"{nameof(SecurePluginCredentialProvider)}_{Plugin.Id}";
+            Id = $"{nameof(SecurePluginCredentialProvider)}_{plugin.PluginFile}";
         }
 
         /// <summary>
@@ -50,12 +51,11 @@ namespace NuGet.Credentials
             }
 
             var request = new GetAuthenticationCredentialsRequest(uri, isRetry, nonInteractive);
-
-            var credentialResponse = await Plugin.Connection.SendRequestAndReceiveResponseAsync<GetAuthenticationCredentialsRequest, GetAuthenticationCredentialsResponse>(
+            var plugin = await PluginManager.Instance.CreatePluginAsync(DiscoveredPlugin, cancellationToken);
+            var credentialResponse = await plugin.Plugin.Connection.SendRequestAndReceiveResponseAsync<GetAuthenticationCredentialsRequest, GetAuthenticationCredentialsResponse>(
                 MessageMethod.GetAuthCredentials,
                 request,
                 cancellationToken);
-
             taskResponse = GetCredentialResponseToCredentiaResponse(credentialResponse);
 
             return taskResponse;
