@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 extern alias CoreV2;
 
@@ -189,8 +189,12 @@ namespace NuGet.CommandLine
             var pluginProviders = new PluginCredentialProviderBuilder(extensionLocator, Settings, Console)
                 .BuildAll(Verbosity.ToString())
                 .ToList();
+            var securePluginProviders =  (new SecureCredentialProviderBuilder(Console)).BuildAll().Result;
 
-            providers.Add(new CredentialProviderAdapter(new SettingsCredentialProvider(SourceProvider, Console))); 
+            providers.Add(new CredentialProviderAdapter(new SettingsCredentialProvider(SourceProvider, Console)));
+
+            providers.AddRange(securePluginProviders);
+
             if (pluginProviders.Any())
             {
                 providers.AddRange(pluginProviders);

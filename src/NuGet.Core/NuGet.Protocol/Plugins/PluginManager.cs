@@ -78,7 +78,13 @@ namespace NuGet.Protocol.Core.Types
                 _isDisposed = true;
             }
         }
-        
+
+        public Task DisposeOfPlugin(IPlugin plugin)
+        {
+            _pluginFactory.DisposePlugin(plugin);
+            throw new NotImplementedException();
+        }
+
         public async Task<IEnumerable<PluginDiscoveryResult>> FindAvailablePlugins(CancellationToken cancellationToken)
         {
             return await _discoverer.Value.DiscoverAsync(cancellationToken);

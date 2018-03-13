@@ -58,6 +58,9 @@ namespace NuGet.Credentials
                 cancellationToken);
             taskResponse = GetCredentialResponseToCredentiaResponse(credentialResponse);
 
+            // Dispose of plugin - currently we don't consider the case that the plugin might be used for another operation.
+            await PluginManager.Instance.DisposeOfPlugin(plugin.Plugin);
+
             return taskResponse;
         }
 
