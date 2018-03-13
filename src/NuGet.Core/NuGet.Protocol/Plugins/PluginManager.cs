@@ -169,7 +169,7 @@ namespace NuGet.Protocol.Core.Types
                 var lazyOperationClaims = _pluginOperationClaims.GetOrAdd(
                         new PluginRequestKey(result.PluginFile.Path, "Source Agnostic"),
                         key => new Lazy<Task<IReadOnlyList<OperationClaim>>>(() =>
-                        GetPluginGetSourceOperationClaims(
+                        GetPluginGetSourceAgnosticOperationClaims(
                             plugin,
                             cancellationToken)));
 
@@ -250,14 +250,14 @@ namespace NuGet.Protocol.Core.Types
 
 
 
-        private async Task<IReadOnlyList<OperationClaim>> GetPluginGetSourceOperationClaims(
+        private async Task<IReadOnlyList<OperationClaim>> GetPluginGetSourceAgnosticOperationClaims(
             IPlugin plugin,
             CancellationToken cancellationToken)
         {
-            var payload = new GetSourceOperationClaimsRequest("blaa");
+            var payload = new GetSourceAgnosticOperationClaimsRequest();
 
-            var response = await plugin.Connection.SendRequestAndReceiveResponseAsync<GetSourceOperationClaimsRequest, GetSourceOperationClaimsResponse>(
-                MessageMethod.GetOperationClaims, // TODO NK - This needs to be a different one
+            var response = await plugin.Connection.SendRequestAndReceiveResponseAsync<GetSourceAgnosticOperationClaimsRequest, GetSourceAgnosticOperationClaimsResponse>(
+                MessageMethod.GetSourceAgnosticOperationClaims,
                 payload,
                 cancellationToken);
             if (response == null)

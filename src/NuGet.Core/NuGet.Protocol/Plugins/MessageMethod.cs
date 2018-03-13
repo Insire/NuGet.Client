@@ -94,6 +94,11 @@ namespace NuGet.Protocol.Plugins
         SetLogLevel,
 
         /// <summary>
+        /// Get source agnostic operation claims
+        /// </summary>
+        GetSourceAgnosticOperationClaims,
+
+        /// <summary>
         /// Get operation claims
         /// </summary>
         GetAuthCredentials,

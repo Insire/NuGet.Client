@@ -12,7 +12,7 @@ namespace NuGet.Protocol.Plugins
     /// <summary>
     /// A plugin's response as to which operations it supports for a specific package source.
     /// </summary>
-    public sealed class GetSourceOperationClaimsResponse
+    public sealed class GetSourceAgnosticOperationClaimsResponse
     {
         /// <summary>
         /// Gets the plugin's operation claims.
@@ -28,7 +28,7 @@ namespace NuGet.Protocol.Plugins
         /// <exception cref="ArgumentException">Thrown if <paramref name="claims" /> contains
         /// undefined <see cref="OperationClaim" /> values.</exception>
         [JsonConstructor]
-        public GetSourceOperationClaimsResponse(IEnumerable<OperationClaim> claims)
+        public GetSourceAgnosticOperationClaimsResponse(IEnumerable<OperationClaim> claims)
         {
             if (claims == null)
             {
