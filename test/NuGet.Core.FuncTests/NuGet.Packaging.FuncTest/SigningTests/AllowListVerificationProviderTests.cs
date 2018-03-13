@@ -102,6 +102,9 @@ namespace NuGet.Packaging.FuncTest
                 }
             }
         }
+
+        // TODO: Add tests for counter
+        // TODO: Add tests for primary and counter
     }
 }
 #endif
