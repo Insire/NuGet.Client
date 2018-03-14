@@ -195,14 +195,16 @@ namespace NuGet.CommandLine
 
             providers.AddRange(securePluginProviders);
 
-            if (pluginProviders.Any())
+            providers.AddRange(pluginProviders);
+
+            if (pluginProviders.Any() || securePluginProviders.Any())
             {
-                providers.AddRange(pluginProviders);
                 if (PreviewFeatureSettings.DefaultCredentialsAfterCredentialProviders)
                 {
                     providers.Add(new DefaultCredentialsCredentialProvider());
                 }
             }
+
             providers.Add(new ConsoleCredentialProvider(Console));
 
             return providers;
