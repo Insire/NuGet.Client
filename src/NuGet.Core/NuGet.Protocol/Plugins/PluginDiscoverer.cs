@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using NuGet.Common;
@@ -182,6 +183,25 @@ namespace NuGet.Protocol.Plugins
             }
 
             return _rawPluginPaths.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        private static readonly string CredentialProviderPattern = "CredentialProvider*.exe";
+
+        private IEnumerable<string> GetPotentialPluginPathsInAssemblyRunningDirectory()
+        {
+            // Add the nuget.exe directory, but be more careful since it contains non-extension assemblies.
+            // Ideally we want to look for all files. However, using MEF to identify imports results in assemblies
+            // being loaded and locked by our App Domain which could be slow, might affect people's build systems
+            // and among other things breaks our build.
+            // Consequently, we'll use a convention - only binaries ending in the name Extensions would be loaded.
+            var nugetDirectory = Path.GetDirectoryName();
+            if (nugetDirectory == null)
+            {
+                return Enumerable.Empty<string>();
+            }
+
+
+            return Directory.EnumerateFiles(nugetDirectory, CredentialProviderPattern);
         }
     }
 }

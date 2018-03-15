@@ -11,13 +11,13 @@ namespace NuGet.Protocol.Plugins.Messages
     public class GetAuthenticationCredentialsRequest
     {
         [JsonRequired]
-        public Uri Uri { get; private set; }
+        public Uri Uri { get;}
 
         [JsonRequired]
-        public bool IsRetry { get; private set; }
+        public bool IsRetry { get; }
 
         [JsonRequired]
-        public bool NonInteractive { get; private set; }
+        public bool NonInteractive { get; }
 
         [JsonConstructor]
         public GetAuthenticationCredentialsRequest(Uri uri, bool isRetry, bool nonInteractive)
