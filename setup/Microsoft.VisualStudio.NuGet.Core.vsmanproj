@@ -7,7 +7,7 @@
       <FinalizeManifest>true</FinalizeManifest>
       <FinalizeSkipLayout>true</FinalizeSkipLayout>
       <BuildNumber>$(SemanticVersion).$(BuildNumber)</BuildNumber>
-      <TargetName>$(MSBuildProjectName)</TargetName>
+      <TargetName>$(VsixName)</TargetName>
       <OutputPath>$(VsixPublishDestination)</OutputPath>
   </PropertyGroup>
 
